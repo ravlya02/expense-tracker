@@ -1,59 +1,54 @@
-# Spec: Login and Logout
+# Spec: Profile Page
 
 ## Overview
-This step adds session-based authentication to Spendly. Users can log in with their email and password, receive a Flask session cookie, and log out to clear it. It also wires up the `/logout` stub route and adds a `get_user_by_email` helper to the DB layer. After this step, the app knows who is logged in and can guard future routes accordingly.
+This feature replaces the `/profile` stub with a fully designed profile page showing static, hardcoded data. The goal is to establish the complete UI layout — user info card, transaction history table, summary stats, and category breakdown — before any real database queries are wired up in Step 5. Building the UI first lets the team validate the design in isolation and ensures the templates are ready for the backend-connection step.
 
 ## Depends on
-- Step 01 — Database Setup (users table, `get_db()`)
-- Step 02 — Registration (`create_user`, password hashing with werkzeug)
+- Step 1: Database setup (schema must exist)
+- Step 2: Registration (user accounts must be creatable)
+- Step 3: Login + Logout (session must be set; `/profile` must be a protected route)
 
 ## Routes
-- `POST /login` — validate credentials, set session, redirect to `/` — public
-- `GET /logout` — clear session, redirect to `/login` — public (currently a stub)
-
-(`GET /login` already renders `login.html` — no change needed to the GET handler beyond ensuring it redirects logged-in users.)
+- GET /profile — render the profile page — logged-in only (redirect to /login if not authenticated)
 
 ## Database changes
-No new tables or columns.
-
-Add one new helper to `database/db.py`:
-- `get_user_by_email(email)` — returns the matching row as a `sqlite3.Row` (or `None` if not found), using a parameterized query.
+No database changes. The existing `users` and `expenses` tables are sufficient.
 
 ## Templates
-- **Modify:** `templates/login.html` — ensure the form has `method="POST"` and `action="{{ url_for('login') }}"`, and displays an `{{ error }}` block when passed from the route.
-- **Modify:** `templates/base.html` — update the navbar: when `session` contains a user, show a "Log out" link (`url_for('logout')`); otherwise show "Sign in" (`url_for('login')`) and "Get started" (`url_for('register')`).
+- Create: `templates/profile.html` — full profile page extending `base.html`; contains four sections:
+  1. **User info card** — avatar initials, name, email, member-since date (all hardcoded)
+  2. **Summary stats row** — total spent, number of transactions, top category (hardcoded)
+  3. **Transaction history table** — list of recent expenses with date, description, category badge, amount (hardcoded rows)
+  4. **Category breakdown** — per-category totals displayed as a simple list or progress-bar rows (hardcoded)
 
 ## Files to change
-- `app.py` — add `POST /login` logic; replace `/logout` stub with real implementation; set `app.secret_key` if not already set.
-- `database/db.py` — add `get_user_by_email(email)`.
-- `templates/login.html` — form attributes and error display.
-- `templates/base.html` — session-aware navbar links.
+- `app.py` — replace the `/profile` stub with a real view function that:
+  - Redirects unauthenticated users to `/login`
+  - Passes hardcoded context variables to `profile.html`
 
 ## Files to create
-None.
+- `templates/profile.html`
 
 ## New dependencies
-No new dependencies. `werkzeug.security.check_password_hash` is already available via Flask.
+No new dependencies.
 
 ## Rules for implementation
-- No SQLAlchemy or ORMs — raw `sqlite3` only.
-- Parameterized queries only — never f-strings in SQL.
-- Password verification with `werkzeug.security.check_password_hash` — never compare plain text.
-- Session stores only `user_id` and `user_name` — never store the password hash in the session.
-- Use CSS variables — never hardcode hex values in templates or stylesheets.
-- All templates extend `base.html`.
-- `app.secret_key` must be set before any `session` usage; use a hard-coded dev string for now (e.g. `"spendly-dev-secret"`).
-- On login failure, re-render `login.html` with a generic error (`"Invalid email or password."`) — never reveal which field was wrong.
-- After successful login, redirect to `/` with `url_for('index')`.
-- Logout must use `session.clear()` (or `session.pop`) then redirect to `url_for('login')`.
-- Do **not** implement a login-required decorator or middleware in this step — that belongs to a later step.
+- No SQLAlchemy or ORMs — use raw sqlite3 via `get_db()` if any DB call is ever needed
+- Parameterised queries only — never string-format SQL
+- Passwords hashed with werkzeug (no changes to auth in this step)
+- Use CSS variables — never hardcode hex values
+- All templates extend `base.html`
+- No inline styles
+- Authentication guard: check `session.get("user_id")`; if absent, `redirect(url_for("login"))`
+- All data passed to the template must be hardcoded Python dicts/lists in `app.py` — no DB queries in this step
+- Category badges must use a CSS class, not inline colour styles
 
 ## Definition of done
-- [ ] Visiting `/login` while already logged in still renders the login page (no redirect yet — that's a later step).
-- [ ] Submitting the login form with the demo credentials (`demo@spendly.com` / `demo123`) redirects to `/`.
-- [ ] Submitting with a wrong password re-renders the login form with the error `"Invalid email or password."`.
-- [ ] Submitting with an unknown email re-renders the login form with the same generic error.
-- [ ] After login, `session['user_id']` and `session['user_name']` are set (verifiable via Flask shell or a quick print in the route).
-- [ ] Visiting `/logout` clears the session and redirects to `/login`.
-- [ ] The navbar shows "Log out" when a session exists, and "Sign in" / "Get started" when it does not.
-- [ ] All existing tests pass (`pytest`).
+- [ ] Visiting `/profile` without being logged in redirects to `/login`
+- [ ] Visiting `/profile` while logged in returns HTTP 200
+- [ ] The page displays a user info card with a name and email
+- [ ] The page displays at least three summary stat values (e.g. total spent, transaction count, top category)
+- [ ] The page displays a transaction history table with at least three hardcoded rows
+- [ ] The page displays a category breakdown section with at least three categories
+- [ ] The navbar shows the logged-in state (username + logout link)
+- [ ] No hex colour values appear in `profile.html` — only CSS variables

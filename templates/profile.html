@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}My Profile — Spendly{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+{% block content %}
+<div class="profile-page">
+
+    <!-- Section 1: User info card -->
+    <section class="profile-card profile-user-card">
+        <div class="profile-avatar">
+            {{ user.name.split()[0][0] | upper }}{{ user.name.split()[-1][0] | upper }}
+        </div>
+        <div class="profile-user-info">
+            <h1 class="profile-user-name">{{ user.name }}</h1>
+            <p class="profile-user-meta">
+                <i data-lucide="mail"></i>
+                {{ user.email }}
+            </p>
+            <p class="profile-user-meta">
+                <i data-lucide="calendar"></i>
+                Member since {{ user.member_since }}
+            </p>
+        </div>
+    </section>
+
+    <!-- Section 2: Summary stats row -->
+    <div class="profile-stats-row">
+        <div class="profile-stat-card">
+            <i data-lucide="credit-card" class="profile-stat-icon"></i>
+            <span class="profile-stat-label">Total Spent</span>
+            <span class="profile-stat-value">${{ stats.total_spent }}</span>
+        </div>
+        <div class="profile-stat-card">
+            <i data-lucide="list" class="profile-stat-icon"></i>
+            <span class="profile-stat-label">Transactions</span>
+            <span class="profile-stat-value">{{ stats.transaction_count }}</span>
+        </div>
+        <div class="profile-stat-card">
+            <i data-lucide="tag" class="profile-stat-icon"></i>
+            <span class="profile-stat-label">Top Category</span>
+            <span class="profile-stat-value">{{ stats.top_category }}</span>
+        </div>
+    </div>
+
+    <!-- Section 3: Transaction history table -->
+    <section class="profile-section">
+        <h2 class="profile-section-title">
+            <i data-lucide="clock"></i>
+            Recent Transactions
+        </h2>
+        <div class="profile-card">
+            <div class="profile-table-wrap">
+                <table class="profile-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th class="align-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in expenses %}
+                        <tr>
+                            <td class="profile-table-date">{{ expense.date }}</td>
+                            <td>{{ expense.description }}</td>
+                            <td>
+                                <span class="profile-badge profile-badge--{{ expense.category | lower | replace(' ', '-') }}">
+                                    {{ expense.category }}
+                                </span>
+                            </td>
+                            <td class="align-right profile-table-amount">${{ expense.amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Category breakdown -->
+    <section class="profile-section">
+        <h2 class="profile-section-title">
+            <i data-lucide="pie-chart"></i>
+            Spending by Category
+        </h2>
+        <div class="profile-card">
+            <div class="profile-cat-list">
+                {% for cat in categories %}
+                <div class="profile-cat-row">
+                    <div class="profile-cat-meta">
+                        <span class="profile-cat-name">{{ cat.name }}</span>
+                        <span class="profile-cat-amount">${{ cat.amount }} &bull; {{ cat.percent }}%</span>
+                    </div>
+                    <div class="profile-bar-track">
+                        <div class="profile-bar-fill profile-bar--{{ cat.name | lower | replace(' ', '-') }}"
+                             style="width: {{ cat.percent }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
