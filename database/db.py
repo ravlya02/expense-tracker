@@ -93,3 +93,73 @@ def seed_db():
     )
     conn.commit()
     conn.close()
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT * FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def get_expenses_by_user(user_id):
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT date, description, category, amount "
+            "FROM expenses WHERE user_id = ? ORDER BY date DESC",
+            (user_id,),
+        ).fetchall()
+        return [
+            {
+                "date": row["date"],
+                "description": row["description"],
+                "category": row["category"],
+                "amount": f"{row['amount']:.2f}",
+            }
+            for row in rows
+        ]
+    finally:
+        conn.close()
+
+
+def get_expense_stats(user_id):
+    conn = get_db()
+    try:
+        agg = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS cnt "
+            "FROM expenses WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        total = agg["total"]
+        count = agg["cnt"]
+
+        cat_rows = conn.execute(
+            "SELECT category, SUM(amount) AS cat_total "
+            "FROM expenses WHERE user_id = ? "
+            "GROUP BY category ORDER BY cat_total DESC",
+            (user_id,),
+        ).fetchall()
+
+        top_category = cat_rows[0]["category"] if cat_rows else "—"
+
+        categories = []
+        if total > 0:
+            for row in cat_rows:
+                categories.append({
+                    "name": row["category"],
+                    "amount": f"{row['cat_total']:.2f}",
+                    "percent": round(row["cat_total"] / total * 100),
+                })
+
+        return {
+            "total_spent": f"{total:.2f}",
+            "transaction_count": count,
+            "top_category": top_category,
+            "categories": categories,
+        }
+    finally:
+        conn.close()

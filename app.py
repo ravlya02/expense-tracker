@@ -1,8 +1,17 @@
 import sqlite3
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
-from database.db import create_user, get_db, get_user_by_email, init_db, seed_db
+from database.db import (
+    create_user,
+    get_db,
+    get_expense_stats,
+    get_expenses_by_user,
+    get_user_by_id,
+    get_user_by_email,
+    init_db,
+    seed_db,
+)
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret"
@@ -85,35 +94,24 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
+    db_user = get_user_by_id(session["user_id"])
+    if db_user is None:
+        abort(404)
+    from datetime import datetime
+    created = datetime.strptime(db_user["created_at"][:10], "%Y-%m-%d")
     user = {
-        "name": "Demo User",
-        "email": "demo@spendly.com",
-        "member_since": "May 2026",
+        "name": db_user["name"],
+        "email": db_user["email"],
+        "member_since": created.strftime("%B %Y"),
     }
+    expense_stats = get_expense_stats(session["user_id"])
     stats = {
-        "total_spent": "329.89",
-        "transaction_count": 8,
-        "top_category": "Bills",
+        "total_spent": expense_stats["total_spent"],
+        "transaction_count": expense_stats["transaction_count"],
+        "top_category": expense_stats["top_category"],
     }
-    expenses = [
-        {"date": "2026-05-18", "description": "Dinner with friends",    "category": "Food",          "amount": "22.00"},
-        {"date": "2026-05-15", "description": "Stationery",             "category": "Other",         "amount": "9.00"},
-        {"date": "2026-05-13", "description": "New headphones",         "category": "Shopping",      "amount": "67.40"},
-        {"date": "2026-05-10", "description": "Streaming subscription", "category": "Entertainment", "amount": "18.99"},
-        {"date": "2026-05-08", "description": "Pharmacy — vitamins",    "category": "Health",        "amount": "35.00"},
-        {"date": "2026-05-05", "description": "Electricity bill",       "category": "Bills",         "amount": "120.00"},
-        {"date": "2026-05-03", "description": "Monthly bus pass top-up","category": "Transport",     "amount": "45.00"},
-        {"date": "2026-05-01", "description": "Lunch at the deli",      "category": "Food",          "amount": "12.50"},
-    ]
-    categories = [
-        {"name": "Bills",         "amount": "120.00", "percent": 36},
-        {"name": "Shopping",      "amount": "67.40",  "percent": 20},
-        {"name": "Transport",     "amount": "45.00",  "percent": 14},
-        {"name": "Health",        "amount": "35.00",  "percent": 11},
-        {"name": "Food",          "amount": "34.50",  "percent": 10},
-        {"name": "Entertainment", "amount": "18.99",  "percent": 6},
-        {"name": "Other",         "amount": "9.00",   "percent": 3},
-    ]
+    expenses = get_expenses_by_user(session["user_id"])
+    categories = expense_stats["categories"]
     return render_template("profile.html", user=user, stats=stats, expenses=expenses, categories=categories)
 
 
