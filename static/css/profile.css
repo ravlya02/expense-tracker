@@ -269,6 +269,114 @@
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Sections 3 & 4: side-by-side grid                                  */
+/* ------------------------------------------------------------------ */
+
+.profile-bottom-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* ------------------------------------------------------------------ */
+/* Filter bar                                                          */
+/* ------------------------------------------------------------------ */
+
+.profile-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-filter-presets {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.profile-preset-btn {
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.profile-preset-btn:hover {
+    background: var(--border-soft);
+    border-color: var(--ink-muted);
+}
+
+.profile-preset-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper-card);
+}
+
+.profile-filter-divider {
+    width: 1px;
+    height: 1.5rem;
+    background: var(--border);
+    flex-shrink: 0;
+    margin: 0 0.25rem;
+}
+
+.profile-filter-dates {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.profile-filter-dates input[type="date"] {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.3rem 0.6rem;
+    font-size: 0.82rem;
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+.profile-filter-to-label {
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+}
+
+.profile-filter-apply {
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: var(--paper-card);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+
+.profile-filter-apply:hover {
+    opacity: 0.88;
+}
+
+.profile-no-results {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
     .profile-page {
         padding: 1.5rem 1rem 3rem;
@@ -283,6 +391,14 @@
 
     .profile-stats-row {
         grid-template-columns: 1fr;
+    }
+
+    .profile-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-filter-divider {
+        display: none;
     }
 
     .profile-stat-value {

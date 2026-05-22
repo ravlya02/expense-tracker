@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(sqlite3 spendly.db \"SELECT COUNT\\(*\\) as users FROM users; SELECT COUNT\\(*\\) as expenses FROM expenses;\")"
+      "Bash(sqlite3 spendly.db \"SELECT COUNT\\(*\\) as users FROM users; SELECT COUNT\\(*\\) as expenses FROM expenses;\")",
+      "Bash(node *)",
+      "Bash(kill %1)"
     ]
   }
 }
