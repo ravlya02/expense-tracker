@@ -29,7 +29,7 @@
         <div class="profile-stat-card">
             <i data-lucide="credit-card" class="profile-stat-icon"></i>
             <span class="profile-stat-label">Total Spent</span>
-            <span class="profile-stat-value">${{ stats.total_spent }}</span>
+            <span class="profile-stat-value">₹{{ stats.total_spent }}</span>
         </div>
         <div class="profile-stat-card">
             <i data-lucide="list" class="profile-stat-icon"></i>
@@ -70,7 +70,7 @@
                                     {{ expense.category }}
                                 </span>
                             </td>
-                            <td class="align-right profile-table-amount">${{ expense.amount }}</td>
+                            <td class="align-right profile-table-amount">₹{{ expense.amount }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -91,7 +91,7 @@
                 <div class="profile-cat-row">
                     <div class="profile-cat-meta">
                         <span class="profile-cat-name">{{ cat.name }}</span>
-                        <span class="profile-cat-amount">${{ cat.amount }} &bull; {{ cat.percent }}%</span>
+                        <span class="profile-cat-amount">₹{{ cat.amount }} &bull; {{ cat.percent }}%</span>
                     </div>
                     <div class="profile-bar-track">
                         <div class="profile-bar-fill profile-bar--{{ cat.name | lower | replace(' ', '-') }}"
