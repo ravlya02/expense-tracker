@@ -43,6 +43,9 @@
         </div>
     </div>
 
+    <!-- Sections 3 & 4: side-by-side grid -->
+    <div class="profile-bottom-grid">
+
     <!-- Section 3: Transaction history table -->
     <section class="profile-section">
         <h2 class="profile-section-title">
@@ -50,6 +53,21 @@
             Recent Transactions
         </h2>
         <div class="profile-card">
+            <div class="profile-filter-bar">
+                <div class="profile-filter-presets">
+                    <button class="profile-preset-btn active" data-preset="all">All Time</button>
+                    <button class="profile-preset-btn" data-preset="month">This Month</button>
+                    <button class="profile-preset-btn" data-preset="3months">Last 3 Months</button>
+                    <button class="profile-preset-btn" data-preset="6months">Last 6 Months</button>
+                </div>
+                <div class="profile-filter-divider"></div>
+                <div class="profile-filter-dates">
+                    <input type="date" id="filter-from">
+                    <span class="profile-filter-to-label">to</span>
+                    <input type="date" id="filter-to">
+                    <button class="profile-filter-apply" id="filter-apply">Apply</button>
+                </div>
+            </div>
             <div class="profile-table-wrap">
                 <table class="profile-table">
                     <thead>
@@ -62,7 +80,7 @@
                     </thead>
                     <tbody>
                         {% for expense in expenses %}
-                        <tr>
+                        <tr data-date="{{ expense.date }}">
                             <td class="profile-table-date">{{ expense.date }}</td>
                             <td>{{ expense.description }}</td>
                             <td>
@@ -73,6 +91,9 @@
                             <td class="align-right profile-table-amount">₹{{ expense.amount }}</td>
                         </tr>
                         {% endfor %}
+                        <tr id="no-results-row" style="display:none;">
+                            <td colspan="4" class="profile-no-results">No expenses match the selected dates.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -103,5 +124,93 @@
         </div>
     </section>
 
+    </div>{# end profile-bottom-grid #}
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var fromEl = document.getElementById('filter-from');
+  var toEl   = document.getElementById('filter-to');
+  var applyBtn = document.getElementById('filter-apply');
+
+  if (!applyBtn) return;
+
+  applyBtn.addEventListener('click', filterExpensesByDate);
+
+  document.querySelectorAll('.profile-preset-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.profile-preset-btn').forEach(function (b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+
+      var today = new Date();
+      var toStr = isoDate(today);
+
+      switch (btn.dataset.preset) {
+        case 'all':
+          fromEl.value = '';
+          toEl.value   = '';
+          break;
+        case 'month': {
+          var first = new Date(today.getFullYear(), today.getMonth(), 1);
+          fromEl.value = isoDate(first);
+          toEl.value   = toStr;
+          break;
+        }
+        case '3months': {
+          var d3 = new Date(today);
+          d3.setMonth(d3.getMonth() - 3);
+          fromEl.value = isoDate(d3);
+          toEl.value   = toStr;
+          break;
+        }
+        case '6months': {
+          var d6 = new Date(today);
+          d6.setMonth(d6.getMonth() - 6);
+          fromEl.value = isoDate(d6);
+          toEl.value   = toStr;
+          break;
+        }
+        default: break;
+      }
+
+      filterExpensesByDate();
+    });
+  });
+
+  function isoDate(d) {
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      String(d.getDate()).padStart(2, '0')
+    ].join('-');
+  }
+
+  function filterExpensesByDate() {
+    var from = fromEl.value;
+    var to   = toEl.value;
+
+    var rows = document.querySelectorAll('tr[data-date]');
+    var visibleCount = 0;
+
+    rows.forEach(function (row) {
+      var date      = row.dataset.date;
+      var afterFrom = !from || date >= from;
+      var beforeTo  = !to   || date <= to;
+      var visible   = afterFrom && beforeTo;
+      row.style.display = visible ? '' : 'none';
+      if (visible) visibleCount++;
+    });
+
+    var noResults = document.getElementById('no-results-row');
+    if (noResults) {
+      noResults.style.display = visibleCount === 0 ? '' : 'none';
+    }
+  }
+}());
+</script>
 {% endblock %}
