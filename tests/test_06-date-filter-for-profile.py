@@ -21,10 +21,10 @@ import pytest
 
 from database import db as db_module
 
-
 # ------------------------------------------------------------------ #
 # Fixtures                                                            #
 # ------------------------------------------------------------------ #
+
 
 @pytest.fixture()
 def app(tmp_path, monkeypatch):
@@ -35,6 +35,7 @@ def app(tmp_path, monkeypatch):
     # Reload app so the module-level init_db() / seed_db() block runs
     # against the patched DB_PATH, not the committed spendly.db.
     import app as app_module
+
     importlib.reload(app_module)
     flask_app = app_module.app
     flask_app.config.update({"TESTING": True})
@@ -77,18 +78,20 @@ def logged_in_client(seeded_app):
 # Helper                                                              #
 # ------------------------------------------------------------------ #
 
+
 def get_profile_html(logged_in_client):
     """GET /profile and return the decoded response body."""
     response = logged_in_client.get("/profile")
-    assert response.status_code == 200, (
-        f"Expected 200 from /profile, got {response.status_code}"
-    )
+    assert (
+        response.status_code == 200
+    ), f"Expected 200 from /profile, got {response.status_code}"
     return response.data.decode("utf-8")
 
 
 # ------------------------------------------------------------------ #
 # Test class                                                          #
 # ------------------------------------------------------------------ #
+
 
 class TestDateFilterProfilePage:
 
@@ -193,9 +196,9 @@ class TestDateFilterProfilePage:
         """All four preset buttons must be rendered in a single page load."""
         html = get_profile_html(logged_in_client)
         for preset_value in ("all", "month", "3months", "6months"):
-            assert f'data-preset="{preset_value}"' in html, (
-                f'Preset button data-preset="{preset_value}" not found in rendered HTML'
-            )
+            assert (
+                f'data-preset="{preset_value}"' in html
+            ), f'Preset button data-preset="{preset_value}" not found in rendered HTML'
 
     # -------------------------------------------------------------- #
     # data-date attributes on expense rows                            #
@@ -207,19 +210,19 @@ class TestDateFilterProfilePage:
         # Collect all <tr> tags that contain data-date
         data_date_matches = re.findall(r'<tr[^>]*data-date="([^"]+)"[^>]*>', html)
         # The seeded dataset has 8 expenses
-        assert len(data_date_matches) == 8, (
-            f"Expected 8 expense rows with data-date, found {len(data_date_matches)}"
-        )
+        assert (
+            len(data_date_matches) == 8
+        ), f"Expected 8 expense rows with data-date, found {len(data_date_matches)}"
 
     def test_data_date_values_are_iso8601(self, logged_in_client):
         """Every data-date value must match the YYYY-MM-DD ISO 8601 format."""
         html = get_profile_html(logged_in_client)
         data_date_values = re.findall(r'data-date="([^"]+)"', html)
-        iso_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+        iso_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
         for value in data_date_values:
-            assert iso_pattern.match(value), (
-                f'data-date value "{value}" is not in YYYY-MM-DD format'
-            )
+            assert iso_pattern.match(
+                value
+            ), f'data-date value "{value}" is not in YYYY-MM-DD format'
 
     def test_data_date_values_match_seeded_dates(self, logged_in_client):
         """The data-date values rendered must exactly match the 8 seeded dates."""
@@ -235,9 +238,9 @@ class TestDateFilterProfilePage:
         }
         html = get_profile_html(logged_in_client)
         rendered_dates = set(re.findall(r'data-date="([^"]+)"', html))
-        assert rendered_dates == expected_dates, (
-            f"Rendered dates {rendered_dates} do not match expected {expected_dates}"
-        )
+        assert (
+            rendered_dates == expected_dates
+        ), f"Rendered dates {rendered_dates} do not match expected {expected_dates}"
 
     def test_data_date_is_on_tr_not_td(self, logged_in_client):
         """The data-date attribute must be on the <tr> element, not a <td>.
@@ -245,9 +248,9 @@ class TestDateFilterProfilePage:
         html = get_profile_html(logged_in_client)
         # Any <td> with data-date would be a placement bug
         td_with_data_date = re.findall(r'<td[^>]*data-date="[^"]*"[^>]*>', html)
-        assert len(td_with_data_date) == 0, (
-            "data-date found on <td> elements — must be on <tr> instead"
-        )
+        assert (
+            len(td_with_data_date) == 0
+        ), "data-date found on <td> elements — must be on <tr> instead"
 
     # -------------------------------------------------------------- #
     # No-results row                                                  #
@@ -266,9 +269,9 @@ class TestDateFilterProfilePage:
         match = re.search(r'<tr[^>]*id="no-results-row"[^>]*>', html)
         assert match is not None, '<tr id="no-results-row"> not found'
         tag = match.group(0)
-        assert "display:none" in tag or "display: none" in tag, (
-            f'Expected style="display:none;" on no-results-row, got: {tag}'
-        )
+        assert (
+            "display:none" in tag or "display: none" in tag
+        ), f'Expected style="display:none;" on no-results-row, got: {tag}'
 
     def test_no_results_row_contains_expected_message(self, logged_in_client):
         """The no-results row must contain the spec-defined message text."""
@@ -287,9 +290,9 @@ class TestDateFilterProfilePage:
         )
         assert match is not None, "Could not locate no-results-row block"
         row_html = match.group(0)
-        assert 'colspan="4"' in row_html, (
-            "no-results-row <td> must have colspan=\"4\" to span Date, "
-            "Description, Category, Amount columns"
+        assert 'colspan="5"' in row_html, (
+            'no-results-row <td> must have colspan="5" to span Date, '
+            "Description, Category, Amount, Actions columns"
         )
 
     # -------------------------------------------------------------- #
@@ -301,9 +304,9 @@ class TestDateFilterProfilePage:
         confirming it sits above the table inside the transaction card."""
         html = get_profile_html(logged_in_client)
         filter_bar_pos = html.find('id="filter-from"')
-        table_pos = html.find('<table')
+        table_pos = html.find("<table")
         assert filter_bar_pos != -1, 'id="filter-from" not found'
-        assert table_pos != -1, '<table> not found'
+        assert table_pos != -1, "<table> not found"
         assert filter_bar_pos < table_pos, (
             "Filter bar (filter-from input) must appear before the expense <table> "
             "in the HTML, but it was found after"
@@ -318,12 +321,12 @@ class TestDateFilterProfilePage:
         card_start = html.find('class="profile-card"', html.find("Recent Transactions"))
         assert card_start != -1, "Transaction .profile-card not found"
         card_content = html[card_start:]
-        assert 'id="filter-from"' in card_content, (
-            "filter-from not found inside the transaction profile-card"
-        )
-        assert "<table" in card_content, (
-            "<table> not found inside the transaction profile-card"
-        )
+        assert (
+            'id="filter-from"' in card_content
+        ), "filter-from not found inside the transaction profile-card"
+        assert (
+            "<table" in card_content
+        ), "<table> not found inside the transaction profile-card"
 
     # -------------------------------------------------------------- #
     # main.js script tag in base layout                               #
@@ -352,22 +355,22 @@ class TestDateFilterProfilePage:
     # -------------------------------------------------------------- #
 
     def test_expense_table_has_four_columns(self, logged_in_client):
-        """The expense table header must have exactly four columns:
-        Date, Description, Category, Amount."""
+        """The expense table header must have exactly five columns:
+        Date, Description, Category, Amount, Actions."""
         html = get_profile_html(logged_in_client)
-        header_match = re.search(r'<thead>(.*?)</thead>', html, re.DOTALL)
+        header_match = re.search(r"<thead>(.*?)</thead>", html, re.DOTALL)
         assert header_match is not None, "<thead> not found"
         thead_html = header_match.group(1)
-        th_tags = re.findall(r'<th[^>]*>', thead_html)
-        assert len(th_tags) == 4, (
-            f"Expected 4 <th> columns, found {len(th_tags)}"
-        )
+        th_tags = re.findall(r"<th[^>]*>", thead_html)
+        assert len(th_tags) == 5, f"Expected 5 <th> columns, found {len(th_tags)}"
 
     def test_expense_table_column_headers(self, logged_in_client):
         """Expense table must have Date, Description, Category, Amount headers."""
         html = get_profile_html(logged_in_client)
         for header in ("Date", "Description", "Category", "Amount"):
-            assert header in html, f'Column header "{header}" not found in rendered HTML'
+            assert (
+                header in html
+            ), f'Column header "{header}" not found in rendered HTML'
 
     def test_expense_amounts_use_rupee_symbol(self, logged_in_client):
         """All expense amounts in the table must be prefixed with ₹
@@ -400,9 +403,9 @@ class TestDateFilterProfilePage:
     def test_transaction_count_correct_for_seeded_data(self, logged_in_client):
         """Stats card must show transaction_count = 8 for the seeded dataset."""
         html = get_profile_html(logged_in_client)
-        assert ">8<" in html or "8</span>" in html or ">8 <" in html or "8\n" in html, (
-            "Expected transaction_count of 8 in rendered HTML"
-        )
+        assert (
+            ">8<" in html or "8</span>" in html or ">8 <" in html or "8\n" in html
+        ), "Expected transaction_count of 8 in rendered HTML"
 
     def test_top_category_is_bills_for_seeded_data(self, logged_in_client):
         """Stats card must show top_category = Bills (₹120.00, highest single category)."""

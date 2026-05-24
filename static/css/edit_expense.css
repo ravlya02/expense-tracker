@@ -1,0 +1,49 @@
+/* ------------------------------------------------------------------ */
+/* Edit Expense page                                                   */
+/* ------------------------------------------------------------------ */
+
+.edit-expense-container {
+    max-width: 520px;
+}
+
+.form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2.25rem;
+    cursor: pointer;
+}
+
+.form-group:has(.form-select) {
+    position: relative;
+}
+
+.form-group:has(.form-select)::after {
+    content: '';
+    position: absolute;
+    right: 0.875rem;
+    top: 50%;
+    transform: translateY(4px) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid var(--ink-muted);
+    border-bottom: 2px solid var(--ink-muted);
+    pointer-events: none;
+}
+
+.edit-expense-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+.edit-expense-optional {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+}
+
+@media (max-width: 560px) {
+    .edit-expense-container {
+        max-width: 100%;
+    }
+}

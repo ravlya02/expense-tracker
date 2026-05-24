@@ -8,12 +8,14 @@ from database.db import (
     add_expense as db_add_expense,
     create_user,
     get_db,
+    get_expense_by_id,
     get_expense_stats,
     get_expenses_by_user,
     get_user_by_id,
     get_user_by_email,
     init_db,
     seed_db,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -21,14 +23,45 @@ app.secret_key = os.environ.get("SECRET_KEY", "spendly-dev-secret")
 
 
 ALLOWED_CATEGORIES = [
-    "Food", "Transport", "Bills", "Health",
-    "Entertainment", "Shopping", "Other",
+    "Food",
+    "Transport",
+    "Bills",
+    "Health",
+    "Entertainment",
+    "Shopping",
+    "Other",
 ]
+
+
+def _validate_expense_form(amount_raw, category, date):
+    """Returns (amount_or_None, error_or_None) for expense form submissions."""
+    error = None
+    amount = None
+    try:
+        amount = float(amount_raw)
+        if amount <= 0:
+            error = "Amount must be greater than zero."
+    except ValueError:
+        error = "Amount must be a valid number."
+
+    if not error and category not in ALLOWED_CATEGORIES:
+        error = "Please select a valid category."
+
+    if not error and not date:
+        error = "Date is required."
+    elif not error:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            error = "Date must be in YYYY-MM-DD format."
+
+    return amount, error
 
 
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
+
 
 @app.route("/")
 def landing():
@@ -92,6 +125,7 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -107,6 +141,7 @@ def profile():
     if db_user is None:
         abort(404)
     from datetime import datetime
+
     created = datetime.strptime(db_user["created_at"][:10], "%Y-%m-%d")
     user = {
         "name": db_user["name"],
@@ -121,7 +156,9 @@ def profile():
     }
     expenses = get_expenses_by_user(session["user_id"])
     categories = expense_stats["categories"]
-    return render_template("profile.html", user=user, stats=stats, expenses=expenses, categories=categories)
+    return render_template(
+        "profile.html", user=user, stats=stats, expenses=expenses, categories=categories
+    )
 
 
 @app.route("/analytics")
@@ -137,37 +174,19 @@ def add_expense():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        amount_raw  = request.form.get("amount", "").strip()
-        category    = request.form.get("category", "").strip()
-        date        = request.form.get("date", "").strip()
+        amount_raw = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date = request.form.get("date", "").strip()
         description = request.form.get("description", "").strip() or None
 
         form = {
-            "amount":      amount_raw,
-            "category":    category,
-            "date":        date,
-            "description": description if description is not None else "",
+            "amount": amount_raw,
+            "category": category,
+            "date": date,
+            "description": description or "",
         }
 
-        error = None
-        amount = None
-        try:
-            amount = float(amount_raw)
-            if amount <= 0:
-                error = "Amount must be greater than zero."
-        except ValueError:
-            error = "Amount must be a valid number."
-
-        if not error and category not in ALLOWED_CATEGORIES:
-            error = "Please select a valid category."
-
-        if not error and not date:
-            error = "Date is required."
-        elif not error:
-            try:
-                datetime.strptime(date, "%Y-%m-%d")
-            except ValueError:
-                error = "Date must be in YYYY-MM-DD format."
+        amount, error = _validate_expense_form(amount_raw, category, date)
 
         if error or amount is None:
             return render_template(
@@ -188,9 +207,59 @@ def add_expense():
     )
 
 
-@app.route("/expenses/<int:id>/edit")
-def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+@app.route("/expenses/<int:expense_id>/edit", methods=["GET", "POST"])
+def edit_expense(expense_id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    expense = get_expense_by_id(expense_id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    if request.method == "POST":
+        amount_raw = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date = request.form.get("date", "").strip()
+        description = request.form.get("description", "").strip() or None
+
+        form = {
+            "amount": amount_raw,
+            "category": category,
+            "date": date,
+            "description": description or "",
+        }
+
+        amount, error = _validate_expense_form(amount_raw, category, date)
+
+        if error or amount is None:
+            return render_template(
+                "edit_expense.html",
+                error=error,
+                form=form,
+                categories=ALLOWED_CATEGORIES,
+                expense_id=expense_id,
+            )
+
+        rows_updated = update_expense(
+            expense_id, session["user_id"], amount, category, date, description
+        )
+        if not rows_updated:
+            abort(404)
+        return redirect(url_for("profile"))
+
+    form = {
+        "amount": expense["amount"],
+        "category": expense["category"],
+        "date": expense["date"],
+        "description": expense["description"] or "",
+    }
+    return render_template(
+        "edit_expense.html",
+        error=None,
+        form=form,
+        categories=ALLOWED_CATEGORIES,
+        expense_id=expense_id,
+    )
 
 
 @app.route("/expenses/<int:id>/delete")
@@ -207,4 +276,4 @@ with app.app_context():
 
 if __name__ == "__main__":
     seed_db()
-    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", port=5001)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", port=5002)
