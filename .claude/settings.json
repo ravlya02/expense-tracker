@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import sys,json,subprocess; data=json.load(sys.stdin); file=data.get('tool_input',{}).get('file_path',''); subprocess.run(['python','-m','black','--quiet',file]) if file.endswith('.py') else None\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import sys,json; d=json.load(sys.stdin); cmd=d.get('tool_input',{}).get('command',''); dangerous=['rm ','rm -','unlink ','truncate ']; protected=['spendly.db','.env','migrations/']; matched=[p for p in protected if p in cmd] if any(x in cmd for x in dangerous) else []; sys.stderr.write(f'BLOCKED: Cannot run destructive command on protected file: {matched[0]}\\n') if matched else None; sys.exit(2) if matched else None\""
+          }
+        ]
+      }
+    ]
+  }
+}
